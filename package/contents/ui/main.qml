@@ -69,7 +69,7 @@ PlasmoidItem {
         objectName: "metroOverlay"
         visible: false
         flags: Qt.FramelessWindowHint
-        color: "transparent"
+        color: "#000000"
         title: "MetroStart"
 
         readonly property int screenWidth: Screen.width > 0 ? Screen.width : 2560
