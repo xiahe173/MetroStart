@@ -21,11 +21,37 @@ Item {
     signal backgroundClicked()
     signal closeRequested()
 
-    readonly property var ctx: context !== null ? context : runtimeContext
-    readonly property var layout: Layout.resolve(ctx.config, ctx.apps || [], { width: width, height: height })
-    readonly property var sections: (ctx.appLayout && ctx.appLayout.sections)
-                                     ? ctx.appLayout.sections
-                                     : Layout.appSections(ctx.apps || [])
+    function reloadWallpaper() {
+        if (runtimeActive)
+            runtime.loadWallpaper()
+    }
+
+    function launchEntry(entry) {
+        if (context !== null) {
+            if (context.launch)
+                context.launch(entry)
+        } else {
+            runtime.launch(entry)
+        }
+    }
+
+    readonly property var appsData: context !== null ? context.apps : runtime.apps
+    readonly property var configData: context !== null ? context.config : runtime.config
+    readonly property var appLayoutData: context !== null ? context.appLayout : null
+    readonly property string wallpaperData: context !== null
+                                             ? (context.wallpaper || "")
+                                             : runtime.wallpaperUrl
+    readonly property string userNameData: context !== null
+                                            ? (context.userName || "")
+                                            : runtime.userName
+    readonly property string avatarData: context !== null
+                                         ? (context.avatar || "")
+                                         : runtime.avatarUrl
+
+    readonly property var layout: Layout.resolve(configData, appsData || [], { width: width, height: height })
+    readonly property var sections: (appLayoutData && appLayoutData.sections)
+                                     ? appLayoutData.sections
+                                     : Layout.appSections(appsData || [])
 
     property bool runtimeActive: context === null
 
@@ -34,17 +60,20 @@ Item {
         visible: false
     }
 
-    readonly property var runtimeContext: ({
-        apps: runtime.apps,
-        config: runtime.config,
-        appLayout: null,
-        wallpaper: "",
-        avatar: runtime.avatarUrl,
-        userName: runtime.userName,
-        launch: function (entry) { runtime.launch(entry) }
-    })
-
     clip: true
+    // The menu paints the desktop wallpaper itself, aligned 1:1 with the
+    // screen (2560x1440 design space), so no compositor backdrop is needed.
+    Image {
+        id: wallpaperImage
+        x: 0
+        y: 0
+        width: 2560
+        height: 1440
+        source: root.wallpaperData || ""
+        fillMode: Image.PreserveAspectCrop
+        smooth: true
+        visible: source !== ""
+    }
 
     // 80 % backdrop: the reference composite is exactly 0.2 * wallpaper + 34.
     Rectangle {
@@ -69,8 +98,7 @@ Item {
         groups: root.layout.groups
         titlesVisible: root.groupTitles
         onTileActivated: (entry) => {
-            if (root.ctx.launch)
-                root.ctx.launch(entry)
+            root.launchEntry(entry)
             root.closeRequested()
         }
     }
@@ -80,8 +108,7 @@ Item {
         visible: root.view === "apps"
         sections: root.sections
         onEntryActivated: (entry) => {
-            if (root.ctx.launch)
-                root.ctx.launch(entry)
+            root.launchEntry(entry)
             root.closeRequested()
         }
     }
@@ -93,10 +120,9 @@ Item {
         hovered: root.sidebarHover
         separators: root.bottomSeparators
         selected: root.view === "apps" ? "apps" : "tiles"
-        wallpaperUrl: root.ctx.wallpaper || ""
-        compositorBlur: root.runtimeActive
-        userName: root.ctx.userName || ""
-        avatar: root.ctx.avatar || ""
+        wallpaperUrl: root.wallpaperData || ""
+        userName: root.userNameData || ""
+        avatar: root.avatarData || ""
         onSectionActivated: (id) => {
             if (id === "toggle")
                 root.sidebarExpanded = !root.sidebarExpanded
@@ -108,8 +134,8 @@ Item {
 
     Flyout {
         kind: root.flyout
-        userName: root.ctx.userName || ""
-        avatar: root.ctx.avatar || ""
+        userName: root.userNameData || ""
+        avatar: root.avatarData || ""
         onPowerAction: (action) => {
             if (root.runtimeActive)
                 runtime.powerAction(action)

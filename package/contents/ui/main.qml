@@ -5,7 +5,6 @@ import QtQuick
 import QtQuick.Window
 import org.kde.plasma.plasmoid
 import org.kde.layershell as LayerShell
-import "effects"
 
 PlasmoidItem {
     id: root
@@ -111,30 +110,11 @@ PlasmoidItem {
             onActivated: root.closeMenu()
         }
 
-        function updateBlur() {
-            if (!overlay.visible) {
-                WindowEffects.setBlurBehind(overlay, false, 0, 0)
-                return
-            }
-            if (menu.expandedSidebar) {
-                const regionWidth = Math.round(386 * overlay.width / 2560)
-                WindowEffects.setBlurBehind(overlay, true, regionWidth, overlay.height)
-            } else {
-                WindowEffects.setBlurBehind(overlay, false, 0, 0)
-            }
-        }
-
         onVisibleChanged: {
-            updateBlur()
-            if (visible)
+            if (visible) {
+                menu.reloadWallpaper()
                 requestActivate()
-        }
-        onWidthChanged: updateBlur()
-        onHeightChanged: updateBlur()
-
-        Connections {
-            target: menu
-            function onExpandedSidebarChanged() { overlay.updateBlur() }
+            }
         }
     }
 }

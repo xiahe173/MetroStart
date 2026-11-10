@@ -14,10 +14,9 @@ Item {
     property string userName: ""
     property string avatar: ""
     property var ui: null
-    property bool compositorBlur: false
-    property real blurFactor: 96
+    property real blurFactor: 48
     property color panelColor: "#363532"
-    property real panelAlpha: 0.87
+    property real panelAlpha: 0.84
     signal sectionActivated(string id)
     signal powerActivated()
 
@@ -33,15 +32,14 @@ Item {
         Rectangle {
             anchors.fill: parent
             color: root.panelColor
-            opacity: root.compositorBlur ? root.panelAlpha : 1.0
         }
         Image {
             x: 0; y: 0
-            width: 2560; height: 1380
-            visible: !root.compositorBlur && root.wallpaperUrl !== ""
+            width: 2560; height: 1440
+            visible: root.wallpaperUrl !== ""
             source: root.wallpaperUrl
             sourceSize: Qt.size(Math.max(1, Math.round(2560 / root.blurFactor)),
-                                Math.max(1, Math.round(1380 / root.blurFactor)))
+                                Math.max(1, Math.round(1440 / root.blurFactor)))
             fillMode: Image.Stretch
             smooth: true
             opacity: 1 - root.panelAlpha

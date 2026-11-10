@@ -19,23 +19,20 @@ Tested on **Plasma 6.6** / **Qt 6.10** (Wayland).
 * Icons from the icon theme; the user's avatar from the account settings.
 * Full-screen menu without dialog padding: the applet opens its own
   layer-shell overlay window instead of using the Plasma popup.
-* Windows-accurate 80 % backdrop; the sidebar asks KWin for a blur-behind
-  region through the helper plugin.
+* The menu paints the desktop wallpaper itself, aligned 1:1 with the screen,
+  then applies the Windows 80 % backdrop. No compositor blur is involved.
 
 ## Build and install
 
-The applet has a small C++ QML plugin for compositor effects (blur behind,
-slide), so the build needs Qt 6 and KF6 WindowSystem development files:
+The applet is pure QML:
 
 ```bash
 cmake -B build
-cmake --build build
 cmake --install build --prefix ~/.local
 ```
 
 The package is installed to
-`~/.local/share/plasma/plasmoids/org.kde.plasma.metrostart`; the helper plugin
-lives inside it (`contents/ui/effects`).
+`~/.local/share/plasma/plasmoids/org.kde.plasma.metrostart`.
 
 Then add **MetroStart** from *Add Widgets*. Nothing else in the system
 configuration is touched; removing the applet is enough to undo it.
@@ -44,13 +41,17 @@ The menu stops above a 60 px panel by default. It is computed from
 `Screen.availableGeometry` when the compositor reports a work area, otherwise
 60 px is assumed.
 
-### Blur
+### Wallpaper and acrylic
 
-The sidebar uses KWin's blur-behind effect. No window rule is needed: the
-applet requests the region itself. KWin's *Blur* desktop effect must be enabled
-(System Settings → Desktop Effects). If it is disabled the sidebar falls back
-to a flat tint; the main menu area is intentionally not blurred, matching the
-reference (80 % tint, no backdrop blur).
+The menu reads the current desktop wallpaper from Plasma
+(`desktops()[0]` wallpaper configuration) and paints it at 2560×1440 design
+space, so it always aligns with the real desktop; the taskbar area is simply
+clipped away. The content area is the Windows 80 % tint over that image.
+
+The sidebar uses an in-app blurred copy of the same wallpaper (downsampled
+2560×1440 → ~27×15 and scaled back up) under an 87 % tint. This gives the
+Windows acrylic look without touching KWin's blur effect, so it cannot affect
+other windows and works even when the compositor blur is disabled.
 
 ## Layout file
 
@@ -98,15 +99,13 @@ package/contents/ui/
   AppListView.qml   the "all applications" list
   Sidebar.qml       left rail
   Flyout.qml        power / user flyouts
-  Runtime.qml       live data: home, layout file, applications, user
+  Runtime.qml       live data: home, layout file, wallpaper, applications, user
   Avatar.qml        circular avatar (photo or fallback)
-  effects/          QML plugin: KWindowEffects blur/slide
   AppIndex.qml      application menu enumeration (apps data engine)
   Layout.js         layout file -> pixel geometry
   Paths.js          XDG paths
   metrics.js        design constants
 package/contents/assets/ui/   UI glyphs (hamburger, grid, list, power, ...)
-plugin/plugin.cpp             QML plugin implementation
 ```
 
 `MetroMenu` takes a single `context` object so that a render harness can inject

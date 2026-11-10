@@ -1,3 +1,0 @@
-module MetroStart.Effects
-plugin metrostarteffects
-classname MetroStartEffectsPlugin

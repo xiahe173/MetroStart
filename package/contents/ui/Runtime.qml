@@ -12,6 +12,7 @@ Item {
     property var config: null
     property bool configLoaded: false
     property string configPath: ""
+    property string wallpaperUrl: ""
     property var apps: appIndex.apps
     property bool ready: appIndex.ready
 
@@ -41,12 +42,26 @@ Item {
 
     function run(command, onDone) {
         const cb = function (sourceName, data) {
+            if (sourceName !== command)
+                return
             shell.newData.disconnect(cb)
             if (onDone)
                 onDone(data)
         }
         shell.newData.connect(cb)
         shell.connectSource(command)
+    }
+
+    function loadWallpaper() {
+        const script = 'var d=desktops()[0]; d.currentConfigGroup=["Wallpaper",d.wallpaperPlugin,"General"]; print(d.readConfig("Image"));'
+        run("qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '" + script + "'", function (data) {
+            if (data && data["exit code"] === 0 && data.stdout) {
+                const url = data.stdout.trim()
+                if (url !== "") {
+                    runtime.wallpaperUrl = url
+                }
+            }
+        })
     }
 
     function loadConfig() {
@@ -87,6 +102,7 @@ Item {
             runtime.homeDir = (data && data.stdout) ? data.stdout.trim() : ""
             Paths.setHome(runtime.homeDir)
             runtime.loadConfig()
+            runtime.loadWallpaper()
         })
     }
 }
