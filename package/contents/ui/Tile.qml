@@ -1,10 +1,14 @@
-// A single tile: translucent fill, icon and up to two label lines.
+// A single tile: translucent fill, icon, labels, reveal border and spotlight.
 import QtQuick
+import Qt5Compat.GraphicalEffects
 import "metrics.js" as Metrics
 
 Item {
     id: tile
     property var tileData: null
+    property real pointerX: -1
+    property real pointerY: -1
+    property bool pointerInside: false
     signal activated(var entry)
 
     width: tileData ? tileData.w : 0
@@ -19,15 +23,44 @@ Item {
     }
     readonly property bool twoLines: labelLines.length > 1
 
+    readonly property bool hovered: hover.hovered
+    readonly property real localX: pointerX - x
+    readonly property real localY: pointerY - y
+    readonly property real distance: Math.hypot(pointerX - (x + width / 2),
+                                                pointerY - (y + height / 2))
+    // Reveal: tiles close to the pointer light up, the hovered tile strongest.
+    readonly property real reveal: pointerInside ? Math.max(0, 1 - distance / 360) : 0
+
     Rectangle {
         anchors.fill: parent
         color: Metrics.tileFill
         opacity: Metrics.tileFillOpacity
     }
 
-    readonly property var iconRect: (tileData && tileData.iconRect) ? tileData.iconRect : null
+    // Soft radial spotlight, only for the tile under the pointer.
+    RadialGradient {
+        anchors.fill: parent
+        visible: tile.hovered
+        horizontalOffset: tile.localX - width / 2
+        verticalOffset: tile.localY - height / 2
+        horizontalRadius: 220
+        verticalRadius: 220
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#16FFFFFF" }
+            GradientStop { position: 0.55; color: "#08FFFFFF" }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
 
-    readonly property int fallbackIconSize: Math.round(Math.min(width, height) * (labelLines.length > 0 ? 0.42 : 0.5))
+    readonly property var iconRect: {
+        if (!tileData || !tileData.iconRect)
+            return null
+        const r = tileData.iconRect
+        return Array.isArray(r) ? { x: r[0], y: r[1], w: r[2], h: r[3] }
+                                : { x: r.x, y: r.y, w: r.w, h: r.h }
+    }
+    readonly property int fallbackIconSize: Math.round(Math.min(width, height)
+                                                       * (labelLines.length > 0 ? 0.42 : 0.5))
 
     AppIcon {
         visible: !!(tile.tileData && tile.tileData.icon)
@@ -61,9 +94,23 @@ Item {
         letterSpacing: hasCjk ? Metrics.cjkLetterSpacing : 0
     }
 
-    MouseArea {
+    // Reveal border: 1 px, brightest on the hovered tile and fading with
+    // distance so neighbouring tiles pick up the pointer light.
+    Rectangle {
         anchors.fill: parent
-        enabled: !!tile.tileData && (!!tile.tileData.exec || !!tile.tileData.desktopId)
-        onClicked: tile.activated(tile.tileData)
+        color: "transparent"
+        border.width: 1
+        border.color: tile.hovered
+                      ? Qt.rgba(1, 1, 1, 0.38)
+                      : (tile.pointerInside ? Qt.rgba(1, 1, 1, 0.02 + 0.20 * tile.reveal)
+                                            : "transparent")
+    }
+
+    HoverHandler {
+        id: hover
+    }
+
+    TapHandler {
+        onTapped: tile.activated(tile.tileData)
     }
 }

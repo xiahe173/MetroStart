@@ -21,6 +21,8 @@ Tested on **Plasma 6.6** / **Qt 6.10** (Wayland).
   layer-shell overlay window instead of using the Plasma popup.
 * The menu paints the desktop wallpaper itself, aligned 1:1 with the screen,
   then applies the Windows 80 % backdrop. No compositor blur is involved.
+* Fluent "Reveal" style pointer light: tiles get a 1 px border that brightens
+  near the cursor, plus a radial searchlight over the backdrop.
 
 ## Build and install
 

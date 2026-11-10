@@ -6,6 +6,9 @@ Item {
     id: root
     property var groups: []
     property bool titlesVisible: false
+    property real pointerX: -1
+    property real pointerY: -1
+    property bool pointerInside: false
     signal tileActivated(var entry)
 
     Repeater {
@@ -17,6 +20,9 @@ Item {
                 delegate: Tile {
                     required property var modelData
                     tileData: modelData
+                    pointerX: root.pointerX
+                    pointerY: root.pointerY
+                    pointerInside: root.pointerInside
                     onActivated: (entry) => root.tileActivated(entry)
                 }
             }

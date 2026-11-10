@@ -1,5 +1,6 @@
 // MetroStart menu surface: backdrop, tiles or app list, sidebar and flyouts.
 import QtQuick
+import Qt5Compat.GraphicalEffects
 import "metrics.js" as Metrics
 import "Layout.js" as Layout
 
@@ -16,6 +17,9 @@ Item {
     property bool bottomSeparators: false
     property bool groupTitles: false
     property bool renaming: false
+    property real pointerX: -1
+    property real pointerY: -1
+    property bool pointerInside: false
     property string flyout: ""             // "" | "power" | "user"
     readonly property bool expandedSidebar: sidebarExpanded
     signal backgroundClicked()
@@ -61,6 +65,18 @@ Item {
     }
 
     clip: true
+
+    HoverHandler {
+        id: menuHover
+        enabled: context === null
+        onPointChanged: {
+            if (hovered) {
+                root.pointerX = point.position.x
+                root.pointerY = point.position.y
+            }
+        }
+        onHoveredChanged: root.pointerInside = hovered
+    }
     // The menu paints the desktop wallpaper itself, aligned 1:1 with the
     // screen (2560x1440 design space), so no compositor backdrop is needed.
     Image {
@@ -92,11 +108,30 @@ Item {
         onClicked: root.backgroundClicked()
     }
 
+    // Pointer "searchlight": a soft radial light over the backdrop, under the
+    // tiles, so the reveal borders read as lit by the cursor.
+    RadialGradient {
+        anchors.fill: parent
+        visible: root.pointerInside
+        horizontalOffset: root.pointerX - width / 2
+        verticalOffset: root.pointerY - height / 2
+        horizontalRadius: 420
+        verticalRadius: 420
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#12FFFFFF" }
+            GradientStop { position: 0.5; color: "#08FFFFFF" }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
+
     TilesView {
         anchors.fill: parent
         visible: root.view === "tiles"
         groups: root.layout.groups
         titlesVisible: root.groupTitles
+        pointerX: root.pointerX
+        pointerY: root.pointerY
+        pointerInside: root.pointerInside
         onTileActivated: (entry) => {
             root.launchEntry(entry)
             root.closeRequested()
