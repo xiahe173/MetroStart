@@ -33,7 +33,6 @@ Item {
     readonly property bool effectivePointerInside: debugPointerActive ? debugPointerInside : pointerInside
     property string flyout: ""             // "" | "power" | "user"
     readonly property bool expandedSidebar: sidebarExpanded
-    signal backgroundClicked()
     signal closeRequested()
 
     function reloadWallpaper() {
@@ -112,11 +111,6 @@ Item {
         anchors.fill: parent
         color: "#000000"
         opacity: 0.6666667
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: root.backgroundClicked()
     }
 
     TilesView {

@@ -77,13 +77,18 @@ PlasmoidItem {
         // The reference layout assumes a 60 px taskbar at 2560 px wide.
         // Screen reports logical pixels, so scale the panel with the menu.
         readonly property int panelHeight: Math.round(60 * screenWidth / 2560)
+        // Set once the window has been mapped and activated; only then does
+        // losing focus close the menu.
+        property bool armed: false
 
         width: screenWidth
         height: Math.max(1, screenHeight - panelHeight)
         x: 0
         y: 0
 
-        LayerShell.Window.layer: LayerShell.Window.LayerOverlay
+        // Panel level, not overlay: panel context menus and other overlay-layer
+        // surfaces are allowed to stay above the Start menu.
+        LayerShell.Window.layer: LayerShell.Window.LayerTop
         LayerShell.Window.anchors: LayerShell.Window.AnchorTop
                                     | LayerShell.Window.AnchorLeft
                                     | LayerShell.Window.AnchorRight
@@ -100,7 +105,6 @@ PlasmoidItem {
                 xScale: overlay.width / 2560
                 yScale: overlay.height / 1380
             }
-            onBackgroundClicked: root.closeMenu()
             onCloseRequested: root.closeMenu()
         }
 
@@ -110,10 +114,27 @@ PlasmoidItem {
             onActivated: root.closeMenu()
         }
 
+        // Like a popup: any interaction outside the window hides the menu.
+        // A short grace period avoids closing while the window is still being
+        // mapped and activated.
+        Timer {
+            id: armTimer
+            interval: 250
+            onTriggered: overlay.armed = true
+        }
+        onActiveChanged: {
+            if (!active && armed)
+                root.closeMenu()
+        }
         onVisibleChanged: {
             if (visible) {
+                armed = false
+                armTimer.restart()
                 menu.reloadWallpaper()
                 requestActivate()
+            } else {
+                armTimer.stop()
+                armed = false
             }
         }
     }
