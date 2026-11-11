@@ -27,12 +27,17 @@ var groupTitleSize = 20
 var groupTitleOffsetY = -42
 
 // Sidebar
-var sidebarCollapsedWidth = 56
+var sidebarCollapsedWidth = 76
 var sidebarExpandedWidth = 386
 var sidebarAccentWidth = 6
 var sidebarAccentColor = "#6C91B5"
 var sidebarItemHeight = 72
 var sidebarItemsTop = 78
+var sidebarHeaderHeight = 78
+var sidebarUserY = 1236
+var sidebarUserHeight = 70
+var sidebarPowerY = 1306
+var sidebarPowerHeight = 74
 var sidebarTitleSize = 24
 var sidebarItemSize = 23
 var sidebarSelectedColor = "#B8D6E8"

@@ -1,6 +1,5 @@
 // MetroStart menu surface: backdrop, tiles or app list, sidebar and flyouts.
 import QtQuick
-import Qt5Compat.GraphicalEffects
 import "metrics.js" as Metrics
 import "Layout.js" as Layout
 
@@ -20,6 +19,18 @@ Item {
     property real pointerX: -1
     property real pointerY: -1
     property bool pointerInside: false
+    // Hooks used by the offscreen render harness to place the pointer (and the
+    // hovered control) at a fixed position. They are off in the applet itself.
+    property bool debugPointerActive: false
+    property bool debugPointerInside: true
+    property real debugPointerX: 0
+    property real debugPointerY: 0
+    property int debugHoverTile: -1
+    property string debugHoverControl: ""
+
+    readonly property real effectivePointerX: debugPointerActive ? debugPointerX : pointerX
+    readonly property real effectivePointerY: debugPointerActive ? debugPointerY : pointerY
+    readonly property bool effectivePointerInside: debugPointerActive ? debugPointerInside : pointerInside
     property string flyout: ""             // "" | "power" | "user"
     readonly property bool expandedSidebar: sidebarExpanded
     signal backgroundClicked()
@@ -108,30 +119,16 @@ Item {
         onClicked: root.backgroundClicked()
     }
 
-    // Pointer "searchlight": a soft radial light over the backdrop, under the
-    // tiles, so the reveal borders read as lit by the cursor.
-    RadialGradient {
-        anchors.fill: parent
-        visible: root.pointerInside
-        horizontalOffset: root.pointerX - width / 2
-        verticalOffset: root.pointerY - height / 2
-        horizontalRadius: 420
-        verticalRadius: 420
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#12FFFFFF" }
-            GradientStop { position: 0.5; color: "#08FFFFFF" }
-            GradientStop { position: 1.0; color: "transparent" }
-        }
-    }
-
     TilesView {
         anchors.fill: parent
         visible: root.view === "tiles"
         groups: root.layout.groups
         titlesVisible: root.groupTitles
-        pointerX: root.pointerX
-        pointerY: root.pointerY
-        pointerInside: root.pointerInside
+        pointerX: root.effectivePointerX
+        pointerY: root.effectivePointerY
+        pointerInside: root.effectivePointerInside
+        debugHoverTile: root.debugHoverTile
+        hoverInjected: root.debugPointerActive
         onTileActivated: (entry) => {
             root.launchEntry(entry)
             root.closeRequested()
@@ -156,6 +153,11 @@ Item {
         separators: root.bottomSeparators
         selected: root.view === "apps" ? "apps" : "tiles"
         wallpaperUrl: root.wallpaperData || ""
+        pointerX: root.effectivePointerX
+        pointerY: root.effectivePointerY
+        pointerInside: root.effectivePointerInside
+        debugHoverControl: root.debugHoverControl
+        hoverInjected: root.debugPointerActive
         userName: root.userNameData || ""
         avatar: root.avatarData || ""
         onSectionActivated: (id) => {
@@ -165,6 +167,7 @@ Item {
                 root.view = id
         }
         onPowerActivated: root.flyout = (root.flyout === "power" ? "" : "power")
+        onUserActivated: root.flyout = (root.flyout === "user" ? "" : "user")
     }
 
     Flyout {

@@ -9,6 +9,8 @@ Item {
     property real pointerX: -1
     property real pointerY: -1
     property bool pointerInside: false
+    property int debugHoverTile: -1
+    property bool hoverInjected: false
     signal tileActivated(var entry)
 
     Repeater {
@@ -19,10 +21,13 @@ Item {
                 model: modelData.tiles
                 delegate: Tile {
                     required property var modelData
+                    required property int index
                     tileData: modelData
                     pointerX: root.pointerX
                     pointerY: root.pointerY
                     pointerInside: root.pointerInside
+                    forceHover: index === root.debugHoverTile
+                    hoverInjected: root.hoverInjected
                     onActivated: (entry) => root.tileActivated(entry)
                 }
             }

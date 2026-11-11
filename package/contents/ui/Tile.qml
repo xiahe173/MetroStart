@@ -1,6 +1,6 @@
-// A single tile: translucent fill, icon, labels, reveal border and spotlight.
+// A single tile: translucent fill, icon, labels and the Fluent reveal
+// border/glow that follows the pointer.
 import QtQuick
-import Qt5Compat.GraphicalEffects
 import "metrics.js" as Metrics
 
 Item {
@@ -9,6 +9,8 @@ Item {
     property real pointerX: -1
     property real pointerY: -1
     property bool pointerInside: false
+    property bool hoverInjected: false
+    property bool forceHover: false
     signal activated(var entry)
 
     width: tileData ? tileData.w : 0
@@ -23,13 +25,9 @@ Item {
     }
     readonly property bool twoLines: labelLines.length > 1
 
-    readonly property bool hovered: hover.hovered
+    readonly property bool hovered: forceHover || hover.hovered
     readonly property real localX: pointerX - x
     readonly property real localY: pointerY - y
-    readonly property real distance: Math.hypot(pointerX - (x + width / 2),
-                                                pointerY - (y + height / 2))
-    // Reveal: tiles close to the pointer light up, the hovered tile strongest.
-    readonly property real reveal: pointerInside ? Math.max(0, 1 - distance / 360) : 0
 
     Rectangle {
         anchors.fill: parent
@@ -37,19 +35,15 @@ Item {
         opacity: Metrics.tileFillOpacity
     }
 
-    // Soft radial spotlight, only for the tile under the pointer.
-    RadialGradient {
+    // Interior reveal: larger radius than the border, only on the control
+    // actually under the pointer.
+    RevealGlow {
         anchors.fill: parent
-        visible: tile.hovered
-        horizontalOffset: tile.localX - width / 2
-        verticalOffset: tile.localY - height / 2
-        horizontalRadius: 220
-        verticalRadius: 220
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#16FFFFFF" }
-            GradientStop { position: 0.55; color: "#08FFFFFF" }
-            GradientStop { position: 1.0; color: "transparent" }
-        }
+        anchors.margins: 3
+        radius: 160
+        localX: tile.localX - 3
+        localY: tile.localY - 3
+        strength: tile.hovered ? 0.107 : 0
     }
 
     readonly property var iconRect: {
@@ -94,20 +88,22 @@ Item {
         letterSpacing: hasCjk ? Metrics.cjkLetterSpacing : 0
     }
 
-    // Reveal border: 1 px, brightest on the hovered tile and fading with
-    // distance so neighbouring tiles pick up the pointer light.
-    Rectangle {
+    // Reveal border, 3 px: flat while the tile is hovered, otherwise only the
+    // part of the outline close to the pointer.
+    RevealBorder {
         anchors.fill: parent
-        color: "transparent"
-        border.width: 1
-        border.color: tile.hovered
-                      ? Qt.rgba(1, 1, 1, 0.38)
-                      : (tile.pointerInside ? Qt.rgba(1, 1, 1, 0.02 + 0.20 * tile.reveal)
-                                            : "transparent")
+        pointerX: tile.localX
+        pointerY: tile.localY
+        active: tile.hovered || tile.pointerInside
+        peak: tile.hovered ? 0.50 : 0.25
+        uniform: tile.hovered
+        radius: 115
+        thickness: 3
     }
 
     HoverHandler {
         id: hover
+        enabled: !tile.hoverInjected
     }
 
     TapHandler {

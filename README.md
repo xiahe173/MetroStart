@@ -21,8 +21,10 @@ Tested on **Plasma 6.6** / **Qt 6.10** (Wayland).
   layer-shell overlay window instead of using the Plasma popup.
 * The menu paints the desktop wallpaper itself, aligned 1:1 with the screen,
   then applies the Windows 80 % backdrop. No compositor blur is involved.
-* Fluent "Reveal" style pointer light: tiles get a 1 px border that brightens
-  near the cursor, plus a radial searchlight over the backdrop.
+* Fluent "Reveal": tiles and sidebar buttons get a 3 px border that only lights
+  the part of the outline close to the pointer (radial falloff), plus a soft
+  interior glow on the hovered control. The light is a pre-rendered radial
+  texture, so it does not depend on shader support.
 
 ## Build and install
 
@@ -99,6 +101,9 @@ package/contents/ui/
   MetroMenu.qml     the menu surface; accepts an injected `context`
   TilesView.qml     groups and tiles
   AppListView.qml   the "all applications" list
+  RevealEdge.qml    one border edge with the radial pointer falloff
+  RevealBorder.qml  the four edges of a control outline
+  RevealGlow.qml    interior glow for the hovered control
   Sidebar.qml       left rail
   Flyout.qml        power / user flyouts
   Runtime.qml       live data: home, layout file, wallpaper, applications, user
