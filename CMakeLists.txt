@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(MetroStart VERSION 0.1.0 LANGUAGES NONE)
+project(MetroStart VERSION 0.2.1 LANGUAGES NONE)
 
 # MetroStart is a pure QML Plasma applet: installing it means copying the
 # package into the plasmoid directory.
