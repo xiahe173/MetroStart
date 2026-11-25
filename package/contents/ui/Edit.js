@@ -99,8 +99,37 @@ function sortReadingOrder(tiles) {
 // ---------------------------------------------------------------------------
 // Identity
 
+// Older layouts keep a flat `groups` list; group them into columns the same way
+// Layout.configColumns() does so the resolver sees the original arrangement.
+// The returned config is a fresh copy: neither the groups nor their tiles are
+// shared with the input, so the id pass below cannot mutate the caller's data.
+function legacyColumns(config) {
+    var groups = config && config.groups ? config.groups : []
+    var keys = []
+    var byKey = {}
+    for (var g = 0; g < groups.length; ++g) {
+        var group = clone(groups[g])
+        var key = group.column
+        if (key === undefined)
+            key = group.x !== undefined ? group.x : 0
+        key = String(key)
+        if (!byKey[key]) {
+            byKey[key] = []
+            keys.push(key)
+        }
+        byKey[key].push(group)
+    }
+    // x positions and column indices both sort numerically
+    keys.sort(function (a, b) { return parseFloat(a) - parseFloat(b) })
+    var columns = []
+    for (var k = 0; k < keys.length; ++k)
+        columns.push({ groups: byKey[keys[k]] })
+    return { columns: columns }
+}
+
 function prepare(config) {
-    var copy = clone(config && config.columns ? config : { columns: [] })
+    var source = config && config.columns ? config : legacyColumns(config)
+    var copy = clone(source)
     var groupSeq = 0
     var tileSeq = 0
     for (var c = 0; c < copy.columns.length; ++c) {
